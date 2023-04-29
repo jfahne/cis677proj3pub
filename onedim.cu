@@ -17,13 +17,13 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
     int left_idx = (idx == 0) ? idx : idx - 1;
     int right_idx = (idx == num_slices - 1) ? idx : idx + 1;
 
-    u_shared[threadIdx.x] = u[idx];
+    u_shared[idx] = u[idx];
     __syncthreads();
 
     if (idx < num_slices)
     {
-        u_new_shared[threadIdx.x] = (u_shared[left_idx] + u_shared[right_idx])/2;
-        u_new[idx] = u_new_shared[threadIdx.x];
+        u_new_shared[idx] = (u_shared[left_idx] + u_shared[right_idx])/2;
+        u_new[idx] = u_new_shared[idx];
     }
 }
 
@@ -50,8 +50,8 @@ int main()
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
     // Launch kernel
-    const int block_size = 256;
-    const int num_blocks = (num_slices + block_size - 1) / block_size;
+    const int block_size = 32;
+    const int num_blocks = ceil ((float) ARRAY_SIZE/BLOCK_SIZE);
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
     {
