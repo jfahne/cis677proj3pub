@@ -11,16 +11,16 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 {
     extern __shared__ float shared_mem[];
     float *u_shared = shared_mem;
-    float *u_new_shared = &shared_mem[num_slices];
+    float *u_new_shared = &shared_mem[blockDim.x];
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int left_idx = (idx == 0) ? idx : idx - 1;
-    int right_idx = (idx == num_slices - 1) ? idx : idx + 1;
+    int left_idx = (threadIdx.x == 0) ? threadIdx.x : threadIdx.x - 1;
+    int right_idx = (threadIdx.x == blockDim.x - 1) ? threadIdx.x : threadIdx.x + 1;
 
     u_shared[threadIdx.x] = u[idx];
     __syncthreads();
 
-    if (idx < num_slices)
+    if (threadIdx.x < blockDim.x)
     {
         u_new_shared[threadIdx.x] = (u_shared[left_idx] + u_shared[right_idx])/2;
         u_new[idx] = u_new_shared[threadIdx.x];
@@ -41,10 +41,10 @@ int main()
     cudaMalloc(&d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
-    u[0] = 100;
+    u[0] = 100.0;
     for (int i = 1; i < num_slices; i++)
     {
-        u[i] = 23;
+        u[i] = 23.0;
     }
 
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
