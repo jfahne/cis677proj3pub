@@ -11,13 +11,13 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 {
     extern __shared__ float shared_mem[];
     float *u_shared = shared_mem;
-    float *u_new_shared = (float *)&shared_mem[num_slices];
+    float *u_new_shared = &shared_mem[num_slices];
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int left_idx = (idx == 0) ? idx : idx - 1;
     int right_idx = (idx == num_slices - 1) ? idx : idx + 1;
 
-    u_shared[idx] = u[idx];
+    u_shared[threadIdx.x] = u[idx];
     __syncthreads();
 
     if (idx < num_slices)
