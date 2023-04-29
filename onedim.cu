@@ -59,6 +59,8 @@ int main()
         cudaDeviceSynchronize();
         float *temp = d_u;
         d_u = d_u_new;
+        printf("Time Step: %d", t);
+        printf("%.6f", d_u[1]);
         d_u_new = temp;
     }
 
