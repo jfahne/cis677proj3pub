@@ -1,0 +1,90 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <cuda_runtime.h>
+
+#define ROD_LENGTH 1.0
+#define TIME_STEP 1e-5
+#define T_FINAL 0.1
+#define THERMAL_DIFFUSIVITY 0.001
+
+__global__ void heat_diffusion(float *u, float *u_new, int num_slices, float dx2, float dt)
+{
+    extern __shared__ float shared_mem[];
+    float *u_shared = shared_mem;
+    float *u_new_shared = &shared_mem[num_slices];
+
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int left_idx = (idx == 0) ? idx : idx - 1;
+    int right_idx = (idx == num_slices - 1) ? idx : idx + 1;
+
+    u_shared[threadIdx.x] = u[idx];
+    __syncthreads();
+
+    if (idx < num_slices)
+    {
+        u_new_shared[threadIdx.x] = u[idx] + THERMAL_DIFFUSIVITY * dt / dx2 *
+            (u_shared[right_idx] - 2 * u_shared[idx] + u_shared[left_idx]);
+        u_new[idx] = u_new_shared[threadIdx.x];
+    }
+}
+
+int main()
+{
+    const int num_slices = 2500;
+    const float dx = ROD_LENGTH / num_slices;
+    const float dx2 = dx * dx;
+    const int num_steps = T_FINAL / TIME_STEP;
+
+    float *u = (float *)malloc(num_slices * sizeof(float));
+    float *u_new = (float *)malloc(num_slices * sizeof(float));
+    float *d_u, *d_u_new;
+
+    cudaMalloc(&d_u, num_slices * sizeof(float));
+    cudaMalloc(&d_u_new, num_slices * sizeof(float));
+
+    // Initialize temperature at t=0
+    for (int i = 0; i < num_slices; i++)
+    {
+        float x = i * dx;
+        u[i] = sin(2 * M_PI * x) + 0.5 * sin(6 * M_PI * x);
+    }
+
+    cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
+
+    // Launch kernel
+    const int block_size = 256;
+    const int num_blocks = (num_slices + block_size - 1) / block_size;
+    const size_t shared_mem_size = 2 * num_slices * sizeof(float);
+    for (int t = 0; t < num_steps; t++)
+    {
+        heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices, dx2, TIME_STEP);
+        cudaDeviceSynchronize();
+        float *temp = d_u;
+        d_u = d_u_new;
+        d_u_new = temp;
+    }
+
+    cudaMemcpy(u, d_u, num_slices * sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Print temperature at specified location and time
+    const float location = 0.7;
+    const int index = (int)(location / dx);
+    printf("Temperature at location %.2f m at time %.6f s: %.6f\n", location, T_FINAL, u[index]);
+
+    // Plot temperature at a point over time
+    const int plot_index = (int)(0.3 / dx);
+    printf("Plotting temperature at point %.2f m over time...\n", plot_index * dx);
+    for (int t = 0; t < num_steps; t += 1000)
+    {
+        printf("%.6f\t%.6f\n", t * TIME_STEP, u[plot_index]);
+    }
+
+    // Free memory
+    free(u);
+    free(u_new);
+    cudaFree(d_u);
+    cudaFree(d_u_new);
+
+    return 0;
+}
