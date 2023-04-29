@@ -20,9 +20,18 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
     u_shared[threadIdx.x] = u[idx];
     __syncthreads();
 
-    if (threadIdx.x < blockDim.x)
+    if (threadIdx.x == 0)
+    {
+        u_new_shared[0] = 100.0;
+    }
+    else if (threadIdx.x < blockDim.x)
     {
         u_new_shared[threadIdx.x] = (u_shared[left_idx] + u_shared[right_idx])/2;
+    }
+    __syncthreads();
+
+    if (threadIdx.x < blockDim.x)
+    {
         u_new[idx] = u_new_shared[threadIdx.x];
     }
 }
