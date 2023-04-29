@@ -7,32 +7,25 @@
 #define TIME_STEP 1e-5
 #define T_FINAL 0.1
 
-__global__ void heat_diffusion(float *u, float *u_new, int num_slices)
+__global__ void heat_diffusion(float *u, float *u_new, int num_slices, float dx2, float dt)
 {
     extern __shared__ float shared_mem[];
     float *u_shared = shared_mem;
-    float *u_new_shared = &shared_mem[blockDim.x];
+    float *u_new_shared = &shared_mem[num_slices];
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int left_idx = (threadIdx.x == 0) ? threadIdx.x : threadIdx.x - 1;
-    int right_idx = (threadIdx.x == blockDim.x - 1) ? threadIdx.x : threadIdx.x + 1;
+    int left_idx = (idx == 0) ? idx : idx - 1;
+    int right_idx = (idx == num_slices - 1) ? idx : idx + 1;
 
-    u_shared[threadIdx.x] = u[idx];
+    u_shared[idx] = u[idx];
+    if (idx == 0)
+        u_shared[idx] = 100;
     __syncthreads();
 
-    if (threadIdx.x == 0)
+    if (idx < num_slices)
     {
-        u_new_shared[0] = 100.0;
-    }
-    else if (threadIdx.x < blockDim.x)
-    {
-        u_new_shared[threadIdx.x] = (u_shared[left_idx] + u_shared[right_idx])/2;
-    }
-    __syncthreads();
-
-    if (threadIdx.x < blockDim.x)
-    {
-        u_new[idx] = u_new_shared[threadIdx.x];
+        u_new_shared[idx] = (u_shared[right_idx] + u_shared[left_idx])/2;
+        u_new[idx] = u_new_shared[idx];
     }
 }
 
