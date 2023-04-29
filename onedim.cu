@@ -53,7 +53,7 @@ int main()
     const int block_size = 256;
     const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
-    for (int t = 0; t < num_steps; t++)
+    for (int t = 0; t < num_steps; t+=1)
     {
         heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices);
         cudaDeviceSynchronize();
