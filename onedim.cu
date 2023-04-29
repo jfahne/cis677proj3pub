@@ -11,7 +11,7 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 {
     extern __shared__ float shared_mem[];
     float *u_shared = shared_mem;
-    float *u_new_shared = &shared_mem[num_slices];
+    float *u_new_shared = (float *)&shared_mem[num_slices];
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int left_idx = (idx == 0) ? idx : idx - 1;
@@ -22,8 +22,8 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 
     if (idx < num_slices)
     {
-        u_new_shared[idx] = (u_shared[left_idx] + u_shared[right_idx])/2;
-        u_new[idx] = u_new_shared[idx];
+        u_new_shared[threadIdx.x] = (u_shared[left_idx] + u_shared[right_idx])/2;
+        u_new[idx] = u_new_shared[threadIdx.x];
     }
 }
 
@@ -51,7 +51,7 @@ int main()
 
     // Launch kernel
     const int block_size = 32;
-    const int num_blocks = ceil ((float) ARRAY_SIZE/BLOCK_SIZE);
+    const int num_blocks = ceil ((float) num_slices/block_size);
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
     {
