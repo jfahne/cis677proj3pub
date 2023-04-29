@@ -6,9 +6,8 @@
 #define ROD_LENGTH 1.0
 #define TIME_STEP 1e-5
 #define T_FINAL 0.1
-#define THERMAL_DIFFUSIVITY 0.001
 
-__global__ void heat_diffusion(float *u, float *u_new, int num_slices, float dx2, float dt)
+__global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 {
     extern __shared__ float shared_mem[];
     float *u_shared = shared_mem;
@@ -23,8 +22,7 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices, float dx2
 
     if (idx < num_slices)
     {
-        u_new_shared[threadIdx.x] = u[idx] + THERMAL_DIFFUSIVITY * dt / dx2 *
-            (u_shared[right_idx] - 2 * u_shared[idx] + u_shared[left_idx]);
+        u_new_shared[threadIdx.x] = (u[left_idx] + u[right_idx])/2
         u_new[idx] = u_new_shared[threadIdx.x];
     }
 }
@@ -33,7 +31,6 @@ int main()
 {
     const int num_slices = 2500;
     const float dx = ROD_LENGTH / num_slices;
-    const float dx2 = dx * dx;
     const int num_steps = T_FINAL / TIME_STEP;
 
     float *u = (float *)malloc(num_slices * sizeof(float));
@@ -44,10 +41,10 @@ int main()
     cudaMalloc(&d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
-    for (int i = 0; i < num_slices; i++)
+    u[0] = 100;
+    for (int i = 1; i < num_slices; i++)
     {
-        float x = i * dx;
-        u[i] = sin(2 * M_PI * x) + 0.5 * sin(6 * M_PI * x);
+        u[i] = 23;
     }
 
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
@@ -58,7 +55,7 @@ int main()
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t++)
     {
-        heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices, dx2, TIME_STEP);
+        heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices);
         cudaDeviceSynchronize();
         float *temp = d_u;
         d_u = d_u_new;
@@ -75,7 +72,7 @@ int main()
     // Plot temperature at a point over time
     const int plot_index = (int)(0.3 / dx);
     printf("Plotting temperature at point %.2f m over time...\n", plot_index * dx);
-    for (int t = 0; t < num_steps; t += 1000)
+    for (int t = 0; t < num_steps; t += 1)
     {
         printf("%.6f\t%.6f\n", t * TIME_STEP, u[plot_index]);
     }
