@@ -24,15 +24,15 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
     if (idx == 0) {
         u_new_shared[idx] = (u_shared[right_idx] + 100)/2;
         u_new[idx] = u_new_shared[idx];
-        printf("Not-Edge: %.6f", u_new_shared[idx]);
+        printf("Not-Edge: %.6f\n", u_new_shared[idx]);
     } else if (idx == (num_slices - 1)) {
         u_new_shared[idx] = (23 + u_shared[left_idx])/2;
         u_new[idx] = u_new_shared[idx];
-        printf("Not-Edge: %.6f", u_new_shared[idx]);
+        printf("Not-Edge: %.6f\n", u_new_shared[idx]);
     } else if (idx < num_slices) {
         u_new_shared[idx] = (u_shared[right_idx] + u_shared[left_idx])/2;
         u_new[idx] = u_new_shared[idx];
-        printf("Not-Edge: %.6f", u_new_shared[idx]);
+        printf("Not-Edge: %.6f\n", u_new_shared[idx]);
     } else {
         ((void) 0);
     }
@@ -67,7 +67,9 @@ int main()
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
     {
+        printf("DING\n")
         heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices);
+        printf("DONG\n")
         cudaDeviceSynchronize();
         cudaMemcpy(&history[t*num_slices], d_u, num_slices*sizeof(float), cudaMemcpyDeviceToHost);
         float *temp = d_u;
