@@ -57,15 +57,8 @@ int main()
 
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
-    int minGridSize, block_size, grid_size;
-    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &block_size, heat_diffusion, 0, 0);
-    grid_size = (num_slices + block_size- 1) / blockSize;
-
-    printf("Block size: %d\n", blockSize);
-    printf("Grid size: %d\n", gridSize);
-
-    // const int block_size = 32;
-    // const int num_blocks = (num_slices + block_size - 1) / block_size;
+    const int block_size = 32;
+    const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
     {
