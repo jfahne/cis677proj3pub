@@ -78,7 +78,7 @@ int main()
 
     // Plot temperature at point over time 
     const int plot_idx = (int)(0.3/dx);
-    printf("Plotting temperature at point %.2f m over time:\n", plot_idx*dx)
+    printf("Plotting temperature at point %.2f m over time:\n", plot_idx*dx);
     for (int t=0; t < num_steps; t+=1) {
         printf("%.6f\t%.6f\n", t*TIME_STEP, history[t][plot_idx]);
     }
