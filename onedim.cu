@@ -66,7 +66,7 @@ int main()
         float *temp = d_u;
         d_u = d_u_new;
         d_u_new = temp;
-        &history[t*num_slices] = *temp;
+        &history[t*num_slices] = temp;
     }
 
     cudaMemcpy(u, d_u, num_slices * sizeof(float), cudaMemcpyDeviceToHost);
@@ -80,7 +80,7 @@ int main()
     const int plot_idx = (int)(0.3/dx);
     printf("Plotting temperature at point %.2f m over time:\n", plot_idx*dx);
     for (int t=0; t < num_steps; t+=1) {
-        printf("%.6f\t%.6f\n", t*TIME_STEP, history[t][plot_idx]);
+        printf("%.6f\t%.6f\n", t*TIME_STEP, history[t*num_slices + plot_idx]);
     }
 
     // Free memory
