@@ -27,7 +27,7 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
     } else if (idx < num_slices) {
         u_new_shared[idx] = (u_shared[right_idx] + u_shared[left_idx])/2;
     } else {
-        continue;
+        ((void) 0);
     }
     u_new[idx] = u_new_shared[idx];
 }
