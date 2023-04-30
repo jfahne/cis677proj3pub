@@ -43,7 +43,7 @@ int main()
     float *u_new = (float *)malloc(num_slices * sizeof(float));
     float *d_u, *d_u_new;
 
-    cudaMalloc(&d_u, num_slices * sizeof(float));
+    cudaMalloc((void **)&d_u, num_slices * sizeof(float));
     cudaMalloc(&d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
@@ -52,16 +52,6 @@ int main()
     {
         u[i] = 23.0;
     }
-
-    size_t free_byte;
-    size_t total_byte;
-    cudaMemGetInfo(&free_byte, &total_byte);
-    printf("Free GPU memory: %zu bytes\nTotal GPU memory: %zu bytes\n", free_byte, total_byte);
-    cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaFuncAttributes attr;
-    cudaFuncGetAttributes(&attr, heat_diffusion);
-    printf("Shared memory usage: %zu bytes\n", attr.sharedSizeBytes);
 
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
@@ -72,7 +62,7 @@ int main()
     {
         heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices);
         cudaDeviceSynchronize();
-        cudaMemcpy(&history[t*num_slices], d_u, sizeof(d_u), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&history[t*num_slices], d_u, num_slices*sizeof(float), cudaMemcpyDeviceToHost);
         float *temp = d_u;
         d_u = d_u_new;
         d_u_new = temp;
