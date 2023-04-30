@@ -60,7 +60,7 @@ int main()
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
     cudaFuncAttributes attr;
-    cudaFuncGetAttributes(&attr, myKernel);
+    cudaFuncGetAttributes(&attr, heat_diffusion);
     printf("Shared memory usage: %zu bytes\n", attr.sharedSizeBytes);
 
     // Launch kernel
