@@ -44,13 +44,13 @@ int main()
     float *d_u, *d_u_new;
 
     cudaMalloc((void **)&d_u, num_slices * sizeof(float));
-    cudaMalloc(&d_u_new, num_slices * sizeof(float));
+    cudaMalloc((void **)&d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
-    u[0] = 100.0;
+    d_u[0] = 100.0;
     for (int i = 1; i < num_slices; i++)
     {
-        u[i] = 23.0;
+        d_u[i] = 23.0;
     }
 
     // Launch kernel
