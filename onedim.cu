@@ -19,26 +19,13 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 
     if (idx < num_slices)
         u_shared[idx] = u[idx];
-    print("DING\n")
     __syncthreads();
-    print("DONG\n")
 
-    printf("ID: %d", idx);
-    if (idx == 0) {
-        u_new_shared[idx] = (u_shared[right_idx] + 100)/2;
-        u_new[idx] = u_new_shared[idx];
-        printf("Not-Edge: %.6f\n", u_new_shared[idx]);
-    } else if (idx == (num_slices - 1)) {
-        u_new_shared[idx] = (23 + u_shared[left_idx])/2;
-        u_new[idx] = u_new_shared[idx];
-        printf("Not-Edge: %.6f\n", u_new_shared[idx]);
-    } else if (idx < num_slices) {
-        u_new_shared[idx] = (u_shared[right_idx] + u_shared[left_idx])/2;
-        u_new[idx] = u_new_shared[idx];
-        printf("Not-Edge: %.6f\n", u_new_shared[idx]);
-    } else {
-        ((void) 0);
-    }
+    u_new_shared[idx] = (((idx == 0)?1:0)*(100+u_shared[right_idx])+ //left edge case
+                        (((idx>=1) and (idx<=(num_slices-2))) ? 1 : 0) * (u_shared[left_idx] + u_shared[right_idx])+ //non edge case
+                        ((idx==2399)?1:0)*(u_shared[left_idx]+23))/2; //right edge case and average
+    u_new[idx] = u_new_shared[idx];
+    __syncthreads();
 }
 
 int main()
@@ -65,7 +52,7 @@ int main()
 
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
-    const int block_size = 32;
+    const int block_size = 512;
     const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
