@@ -55,7 +55,7 @@ int main()
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
     // Launch kernel
-    float[num_steps*num_slices] history;
+    float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
     const int block_size = 256;
     const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
@@ -66,7 +66,7 @@ int main()
         float *temp = d_u;
         d_u = d_u_new;
         d_u_new = temp;
-        &history[t*num_slices] = temp;
+        &history[t*num_slices] = *temp;
     }
 
     cudaMemcpy(u, d_u, num_slices * sizeof(float), cudaMemcpyDeviceToHost);
