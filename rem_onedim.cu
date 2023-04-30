@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 
 #define ROD_LENGTH 1.0
-#define TIME_STEP 1e-5
+#define TIME_STEP 1e-6
 #define T_FINAL 0.1
 
 __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
@@ -21,9 +21,9 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
         u_shared[idx] = u[idx];
     __syncthreads();
 
-    u_new_shared[idx] = (((idx == 0)?1:0)*(100+u_shared[right_idx])+ //left edge case
-                        (((idx>=1) and (idx<=(num_slices-2))) ? 1 : 0) * (u_shared[left_idx] + u_shared[right_idx])+ //non edge case
-                        ((idx==2399)?1:0)*(u_shared[left_idx]+23))/2; //right edge case and average
+    u_new_shared[idx] = (((idx == 0)?1:0)*(100+u_shared[right_idx])+ 
+                        (((idx>=1) and (idx<=(num_slices-2))) ? 1 : 0) * (u_shared[left_idx] + u_shared[right_idx])+ 
+                        ((idx==(num_slices-1))?1:0)*(u_shared[left_idx]+23))/2; 
     u_new[idx] = u_new_shared[idx];
 }
 
@@ -35,18 +35,23 @@ int main()
 
     float *u = (float *)malloc(num_slices * sizeof(float));
     float *u_new = (float *)malloc(num_slices * sizeof(float));
-    float *d_u = NULL; 
-    float *d_u_new = NULL;
+    float *d_u;
+    float *d_u_new;
 
-    cudaMalloc((void **)&d_u, num_slices * sizeof(float));
-    cudaMalloc((void **)&d_u_new, num_slices * sizeof(float));
+    cudaError_t err = cudaMalloc((void **)&d_u, num_slices * sizeof(float));
+    printf("%s\n",cudaGetErrorString(err));
+    cudaMalloc((void **) &d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
-    cudaMemset(d_u, 23, num_slices * sizeof(float));
+    for (int i=0; i < num_slices; i+=1) {
+	    u[i] = 23.0;
+    }
+    cudaMemcpy(d_u, u, num_slices*sizeof(float), cudaMemcpyHostToDevice);
+    // cudaMemset(d_u, 23, num_slices * sizeof(float));
 
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
-    const int block_size = 32;
+    const int block_size = 512;
     const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
