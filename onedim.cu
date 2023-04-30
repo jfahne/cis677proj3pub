@@ -25,7 +25,6 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
                         (((idx>=1) and (idx<=(num_slices-2))) ? 1 : 0) * (u_shared[left_idx] + u_shared[right_idx])+ //non edge case
                         ((idx==2399)?1:0)*(u_shared[left_idx]+23))/2; //right edge case and average
     u_new[idx] = u_new_shared[idx];
-    __syncthreads();
 }
 
 int main()
