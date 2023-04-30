@@ -59,6 +59,10 @@ int main()
     printf("Free GPU memory: %zu bytes\nTotal GPU memory: %zu bytes\n", free_byte, total_byte);
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
+    cudaFuncAttributes attr;
+    cudaFuncGetAttributes(&attr, myKernel);
+    printf("Shared memory usage: %zu bytes\n", attr.sharedSizeBytes);
+
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
     const int block_size = 32;
