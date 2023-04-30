@@ -19,7 +19,9 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 
     if (idx < num_slices)
         u_shared[idx] = u[idx];
+    print("DING\n")
     __syncthreads();
+    print("DONG\n")
 
     printf("ID: %d", idx);
     if (idx == 0) {
