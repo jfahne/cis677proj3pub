@@ -17,7 +17,8 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
     int left_idx = (idx == 0) ? idx : idx - 1;
     int right_idx = (idx == (num_slices - 1)) ? idx : idx + 1;
 
-    u_shared[idx] = u[idx];
+    if (idx < num_slices)
+        u_shared[idx] = u[idx];
     __syncthreads();
 
     if (idx == 0) {
@@ -70,7 +71,7 @@ int main()
     {
         heat_diffusion<<<num_blocks, block_size, shared_mem_size>>>(d_u, d_u_new, num_slices);
         cudaDeviceSynchronize();
-        memcpy(&history[t*num_slices], d_u, sizeof(d_u));
+        cudaMemcpy(&history[t*num_slices], d_u, sizeof(d_u), cudaMemcpyDeviceToHost);
         float *temp = d_u;
         d_u = d_u_new;
         d_u_new = temp;
@@ -93,6 +94,7 @@ int main()
     // Free memory
     free(u);
     free(u_new);
+    free(history);
     cudaFree(d_u);
     cudaFree(d_u_new);
 
