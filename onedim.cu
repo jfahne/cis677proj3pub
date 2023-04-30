@@ -42,7 +42,7 @@ int main()
     cudaMalloc((void **)&d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
-    cudaMemset(d_u, 23, num_slices * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemset(d_u, 23, num_slices * sizeof(float));
 
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
