@@ -35,7 +35,8 @@ int main()
 
     float *u = (float *)malloc(num_slices * sizeof(float));
     float *u_new = (float *)malloc(num_slices * sizeof(float));
-    float *d_u, *d_u_new;
+    float *d_u = NULL; 
+    float *d_u_new = NULL;
 
     cudaMalloc((void **)&d_u, num_slices * sizeof(float));
     cudaMalloc((void **)&d_u_new, num_slices * sizeof(float));
