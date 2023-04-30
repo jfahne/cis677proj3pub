@@ -18,15 +18,18 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices, float dx2
     int right_idx = (idx == num_slices - 1) ? idx : idx + 1;
 
     u_shared[idx] = u[idx];
-    if (idx == 0)
-        u_shared[idx] = 100;
     __syncthreads();
 
-    if (idx < num_slices)
-    {
+    if (idx == 0) {
+        u_new_shared[idx] = (u_shared[right_idx] + 100)/2;
+    } else if (idx == (num_slices - 1)) {
+        u_new_shared[idx] = (23 + u_shared[left_idx])/2;
+    } else if (idx < num_slices) {
         u_new_shared[idx] = (u_shared[right_idx] + u_shared[left_idx])/2;
-        u_new[idx] = u_new_shared[idx];
+    } else {
+        continue;
     }
+    u_new[idx] = u_new_shared[idx];
 }
 
 int main()
