@@ -42,17 +42,11 @@ int main()
     cudaMalloc((void **)&d_u_new, num_slices * sizeof(float));
 
     // Initialize temperature at t=0
-    u[0] = 100.0;
-    for (int i = 1; i < num_slices; i++)
-    {
-        u[i] = 23.0;
-    }
-
-    cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemset(d_u, 23, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
     // Launch kernel
     float *history = (float*)malloc(num_steps*num_slices*sizeof(float));
-    const int block_size = 512;
+    const int block_size = 32;
     const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
     for (int t = 0; t < num_steps; t+=1)
