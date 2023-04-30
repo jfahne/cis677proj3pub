@@ -53,6 +53,10 @@ int main()
         u[i] = 23.0;
     }
 
+    size_t free_byte;
+    size_t total_byte;
+    cudaMemGetInfo(&free_byte, &total_byte);
+    printf("Free GPU memory: %zu bytes\nTotal GPU memory: %zu bytes\n", free_byte, total_byte);
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
     // Launch kernel
