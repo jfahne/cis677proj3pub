@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <vector>
 #include <math.h>
 #include <cuda_runtime.h>
 
@@ -56,7 +55,7 @@ int main()
     cudaMemcpy(d_u, u, num_slices * sizeof(float), cudaMemcpyHostToDevice);
 
     // Launch kernel
-    vector<float[]> history(num_steps);
+    float[num_steps][num_slices] history;
     const int block_size = 256;
     const int num_blocks = (num_slices + block_size - 1) / block_size;
     const size_t shared_mem_size = 2 * num_slices * sizeof(float);
@@ -67,7 +66,7 @@ int main()
         float *temp = d_u;
         d_u = d_u_new;
         d_u_new = temp;
-        history.push_back(temp);
+        history[t] = temp;
     }
 
     cudaMemcpy(u, d_u, num_slices * sizeof(float), cudaMemcpyDeviceToHost);
@@ -81,7 +80,7 @@ int main()
     const int plot_idx = (int)(0.3/dx);
     printf("Plotting temperature at point %.2f m over time:\n", plot_idx*dx)
     for (int t=0; t < num_steps; t+=1) {
-        printf("%.6f\t%.6f\n", t*TIME_STEP, u[plot_idx]);
+        printf("%.6f\t%.6f\n", t*TIME_STEP, history[t][plot_idx]);
     }
 
     // Free memory
