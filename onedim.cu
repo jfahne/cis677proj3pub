@@ -7,7 +7,7 @@
 #define TIME_STEP 1e-5
 #define T_FINAL 0.1
 
-__global__ void heat_diffusion(float *u, float *u_new, int num_slices, float dx2, float dt)
+__global__ void heat_diffusion(float *u, float *u_new, int num_slices)
 {
     extern __shared__ float shared_mem[];
     float *u_shared = shared_mem;
