@@ -66,7 +66,7 @@ int main()
         float *temp = d_u;
         d_u = d_u_new;
         d_u_new = temp;
-        *history[t*num_slices] = temp;
+        &history[t*num_slices] = temp;
     }
 
     cudaMemcpy(u, d_u, num_slices * sizeof(float), cudaMemcpyDeviceToHost);
