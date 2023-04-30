@@ -24,12 +24,15 @@ __global__ void heat_diffusion(float *u, float *u_new, int num_slices)
     if (idx == 0) {
         u_new_shared[idx] = (u_shared[right_idx] + 100)/2;
         u_new[idx] = u_new_shared[idx];
+        printf("Not-Edge: %.6f", u_new_shared[idx]);
     } else if (idx == (num_slices - 1)) {
         u_new_shared[idx] = (23 + u_shared[left_idx])/2;
         u_new[idx] = u_new_shared[idx];
+        printf("Not-Edge: %.6f", u_new_shared[idx]);
     } else if (idx < num_slices) {
         u_new_shared[idx] = (u_shared[right_idx] + u_shared[left_idx])/2;
         u_new[idx] = u_new_shared[idx];
+        printf("Not-Edge: %.6f", u_new_shared[idx]);
     } else {
         ((void) 0);
     }
